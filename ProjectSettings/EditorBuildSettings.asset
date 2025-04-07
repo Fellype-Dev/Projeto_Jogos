@@ -9,6 +9,9 @@ EditorBuildSettings:
     path: Assets/Scenes/MainMenu.unity
     guid: 3e847371eb370df4e9efa4b3331e0829
   - enabled: 1
+    path: Assets/Scenes/CenaDoKekis.unity
+    guid: ed701897deda6994b945c14a71195a49
+  - enabled: 1
     path: Assets/Scenes/Tutorial.unity
     guid: 4ac46d82a602bf64f9188435587f0b71
   - enabled: 1
