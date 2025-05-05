@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d3e1ffaf6b0584542be6085d2eaf4286, type: 3}
+  m_Name: Caneca
+  m_EditorClassIdentifier: 
+  ItemName: Caneca
+  ItemDescription: 
+  ItemPrefab: {fileID: 4372676147274369043, guid: a8040dfc07ecda141a0431cef41d0bab,
+    type: 3}
