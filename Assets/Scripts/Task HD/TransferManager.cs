@@ -7,7 +7,7 @@ public class TransferManager : MonoBehaviour
     [Header("Referências da UI")]
     public GameObject transferUI;
     public Image progressBar;
-    public float transferTime = 5f;
+    public float transferTime = 15f;
 
     [HideInInspector] public bool isTransferring = false;
 
