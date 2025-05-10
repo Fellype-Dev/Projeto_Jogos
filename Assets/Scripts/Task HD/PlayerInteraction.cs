@@ -18,13 +18,20 @@ public class PlayerInteraction : MonoBehaviour
     public GameObject droppedHDPrefab; // Prefab do HD que será instanciado ao dropar
     public Transform inventorySlot; // Posição onde o HD aparece no inventário
 
+    public List<GameObject> ListaComputadores; // Lista de computadores
+    public List<GameObject> ListaServidores;  // Lista de servidores
     public List<GameObject> hdObjects;
     private GameObject currentHD;      // HD mais próximo
     private GameObject carregadoHD;    // HD que o jogador está carregando
 
+    public float interactionDistance = 5f; // Distância de interação (ajustada)
+
     private void Start()
     {
         hdObjects = new List<GameObject>(GameObject.FindGameObjectsWithTag("HD"));
+        // Inicializando as listas de computadores e servidores
+        ListaComputadores = new List<GameObject>(GameObject.FindGameObjectsWithTag("Computador"));
+        ListaServidores = new List<GameObject>(GameObject.FindGameObjectsWithTag("Servidor"));
     }
 
     private void Update()
@@ -47,7 +54,7 @@ public class PlayerInteraction : MonoBehaviour
 
                 Debug.Log("HD coletado.");
             }
-            else if (hasHD && IsNear(computer) && !hdInserted && !hdComDados)
+            else if (hasHD && IsNearComputador() && !hdInserted && !hdComDados)
             {
                 hdInserted = true;
                 hasHD = false;
@@ -55,7 +62,7 @@ public class PlayerInteraction : MonoBehaviour
                 carregadoHD.SetActive(false);
                 Debug.Log("HD inserido no computador.");
             }
-            else if (hdInserted && transferComplete && IsNear(computer))
+            else if (hdInserted && transferComplete && IsNearComputador())
             {
                 hdInserted = false;
                 hasHD = true;
@@ -69,7 +76,7 @@ public class PlayerInteraction : MonoBehaviour
 
                 Debug.Log("HD retirado com dados.");
             }
-            else if (hasHD && IsNear(server) && hdComDados)
+            else if (hasHD && IsNearServidor() && hdComDados)
             {
                 hasHD = false;
                 hdComDados = false;
@@ -120,18 +127,19 @@ public class PlayerInteraction : MonoBehaviour
         {
             interactionUI.MostrarTexto("[E] Pegar HD");
         }
-        else if (IsNear(computer))
+        else if (IsNearComputador() && hasHD && !hdInserted && !hdComDados)
         {
-            if (hasHD && !hdInserted && !hdComDados)
-                interactionUI.MostrarTexto("[E] Inserir HD no Computador");
-            else if (hdInserted && !transferComplete)
-                interactionUI.MostrarTexto("[Q] Iniciar Transferência");
-            else if (hdInserted && transferComplete)
-                interactionUI.MostrarTexto("[E] Retirar HD com Dados");
-            else
-                interactionUI.EsconderTexto();
+            interactionUI.MostrarTexto("[E] Inserir HD no Computador");
         }
-        else if (IsNear(server) && hasHD && hdComDados)
+        else if (hdInserted && !transferComplete && IsNearComputador())
+        {
+            interactionUI.MostrarTexto("[Q] Iniciar Transferência");
+        }
+        else if (hdInserted && transferComplete && IsNearComputador())
+        {
+            interactionUI.MostrarTexto("[E] Retirar HD com Dados");
+        }
+        else if (IsNearServidor() && hasHD && hdComDados)
         {
             interactionUI.MostrarTexto("[E] Inserir HD no Servidor");
         }
@@ -143,7 +151,33 @@ public class PlayerInteraction : MonoBehaviour
 
     private bool IsNear(GameObject target)
     {
-        return Vector3.Distance(transform.position, target.transform.position) < 3f;
+        return Vector3.Distance(transform.position, target.transform.position) < interactionDistance;
+    }
+
+    // Função para verificar se o jogador está perto de um computador
+    private bool IsNearComputador()
+    {
+        foreach (GameObject computador in ListaComputadores)
+        {
+            if (computador != null && Vector3.Distance(transform.position, computador.transform.position) < interactionDistance)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Função para verificar se o jogador está perto de um servidor
+    private bool IsNearServidor()
+    {
+        foreach (GameObject servidor in ListaServidores)
+        {
+            if (servidor != null && Vector3.Distance(transform.position, servidor.transform.position) < interactionDistance)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     private GameObject GetNearestHD()
