@@ -1,5 +1,6 @@
+using TMPro;
 using UnityEngine;
-using System.Collections.Generic; // Para usar List
+using System.Collections.Generic;
 
 public class PlayerInteraction : MonoBehaviour
 {
@@ -8,70 +9,103 @@ public class PlayerInteraction : MonoBehaviour
     public bool transferComplete = false;
     public bool hdComDados = false;
 
-    public GameObject listaHD; // Referência ao objeto vazio que contém os HDs
     public GameObject computer;
     public GameObject server;
     public TransferManager transferManager;
     public PlayerInteractionUI interactionUI;
-    public TaskHUD taskHUD; // Referência ao TaskHUD
+    public TaskHUD taskHUD;
 
-    private List<GameObject> hdObjects = new List<GameObject>(); // Lista de HDs no jogo
+    public GameObject droppedHDPrefab; // Prefab do HD que será instanciado ao dropar
+    public Transform inventorySlot; // Posição onde o HD aparece no inventário
+
+    public List<GameObject> hdObjects;
+    private GameObject currentHD;      // HD mais próximo
+    private GameObject carregadoHD;    // HD que o jogador está carregando
 
     private void Start()
     {
-        // Carregar todos os HDs dentro do objeto "ListaHD"
-        PopulateHDList();
+        hdObjects = new List<GameObject>(GameObject.FindGameObjectsWithTag("HD"));
     }
 
     private void Update()
     {
+        // PEGAR OU INTERAGIR COM HD (E)
         if (Input.GetKeyDown(KeyCode.E))
         {
-            // Pegar o HD
-            GameObject targetHD = GetClosestHD();
-            if (targetHD != null && !hasHD && IsNear(targetHD))
+            if (!hasHD && currentHD != null && IsNear(currentHD))
             {
                 hasHD = true;
-                targetHD.SetActive(false); // Remove o HD da cena (não pode mais ser pego)
+                carregadoHD = currentHD;
+
+                carregadoHD.SetActive(false);
+                carregadoHD.transform.SetParent(inventorySlot);
+                carregadoHD.transform.localPosition = Vector3.zero;
+                carregadoHD.transform.localRotation = Quaternion.identity;
+
+                hdObjects.Remove(carregadoHD);
+                currentHD = null;
+
                 Debug.Log("HD coletado.");
             }
-            // Inserir no computador (somente se HD não tiver dados)
             else if (hasHD && IsNear(computer) && !hdInserted && !hdComDados)
             {
                 hdInserted = true;
                 hasHD = false;
+
+                carregadoHD.SetActive(false);
                 Debug.Log("HD inserido no computador.");
             }
-            // Retirar HD após transferência
             else if (hdInserted && transferComplete && IsNear(computer))
             {
                 hdInserted = false;
                 hasHD = true;
                 transferComplete = false;
+                hdComDados = true;
+
+                carregadoHD.SetActive(true);
+                carregadoHD.transform.SetParent(inventorySlot);
+                carregadoHD.transform.localPosition = Vector3.zero;
+                carregadoHD.transform.localRotation = Quaternion.identity;
+
                 Debug.Log("HD retirado com dados.");
             }
-            // Inserir no servidor (somente se HD tiver dados)
             else if (hasHD && IsNear(server) && hdComDados)
             {
                 hasHD = false;
-                hdComDados = false; // Dados foram entregues
-                // Verifique se taskHUD não é nulo antes de chamar CompleteTask
+                hdComDados = false;
+
                 if (taskHUD != null)
-                {
                     taskHUD.CompleteTask();
-                }
                 else
-                {
                     Debug.LogError("taskHUD não foi configurado corretamente!");
-                }
+
                 Debug.Log("Tarefa concluída com sucesso!");
 
-                // Remover o HD permanentemente da cena
-                Destroy(targetHD); // Remove o HD coletado da cena
+                if (carregadoHD != null)
+                {
+                    Destroy(carregadoHD);
+                    carregadoHD = null;
+                }
             }
         }
 
-        // Iniciar a transferência de dados
+        // DROPAR (G)
+        if (Input.GetKeyDown(KeyCode.G) && hasHD && carregadoHD != null)
+        {
+            hasHD = false;
+
+            Vector3 dropPosition = transform.position + transform.forward * 1.5f + Vector3.up * 0.5f;
+            GameObject droppedHD = Instantiate(droppedHDPrefab, dropPosition, Quaternion.identity);
+            droppedHD.tag = "HD";
+
+            hdObjects.Add(droppedHD);
+            Destroy(carregadoHD);
+            carregadoHD = null;
+
+            Debug.Log("HD dropado.");
+        }
+
+        // TRANSFERÊNCIA (Q)
         if (Input.GetKeyDown(KeyCode.Q) && hdInserted && !transferComplete)
         {
             transferManager.StartTransfer();
@@ -80,30 +114,22 @@ public class PlayerInteraction : MonoBehaviour
 
     private void LateUpdate()
     {
-        GameObject closestHD = GetClosestHD();
+        currentHD = GetNearestHD();
 
-        if (closestHD != null && IsNear(closestHD) && !hasHD)
+        if (currentHD != null && !hasHD && IsNear(currentHD))
         {
             interactionUI.MostrarTexto("[E] Pegar HD");
         }
         else if (IsNear(computer))
         {
             if (hasHD && !hdInserted && !hdComDados)
-            {
                 interactionUI.MostrarTexto("[E] Inserir HD no Computador");
-            }
             else if (hdInserted && !transferComplete)
-            {
                 interactionUI.MostrarTexto("[Q] Iniciar Transferência");
-            }
             else if (hdInserted && transferComplete)
-            {
                 interactionUI.MostrarTexto("[E] Retirar HD com Dados");
-            }
             else
-            {
                 interactionUI.EsconderTexto();
-            }
         }
         else if (IsNear(server) && hasHD && hdComDados)
         {
@@ -117,41 +143,27 @@ public class PlayerInteraction : MonoBehaviour
 
     private bool IsNear(GameObject target)
     {
-        return Vector3.Distance(transform.position, target.transform.position) < 3f; // Distância de interação
+        return Vector3.Distance(transform.position, target.transform.position) < 3f;
     }
 
-    // Função para retornar o HD mais próximo do personagem
-    private GameObject GetClosestHD()
+    private GameObject GetNearestHD()
     {
-        GameObject closestHD = null;
-        float closestDistance = float.MaxValue;
+        GameObject nearestHD = null;
+        float nearestDistance = Mathf.Infinity;
 
-        // Itera sobre todos os HDs para encontrar o mais próximo
         foreach (GameObject hd in hdObjects)
         {
             if (hd != null)
             {
                 float distance = Vector3.Distance(transform.position, hd.transform.position);
-                if (distance < closestDistance)
+                if (distance < nearestDistance)
                 {
-                    closestHD = hd;
-                    closestDistance = distance;
+                    nearestHD = hd;
+                    nearestDistance = distance;
                 }
             }
         }
 
-        return closestHD;
-    }
-
-    // Função para preencher a lista de HDs com os objetos filhos de ListaHD
-    private void PopulateHDList()
-    {
-        hdObjects.Clear(); // Limpar qualquer conteúdo anterior da lista
-
-        // Itera sobre todos os filhos do objeto "ListaHD" e adiciona à lista de HDs
-        foreach (Transform child in listaHD.transform)
-        {
-            hdObjects.Add(child.gameObject);
-        }
+        return nearestHD;
     }
 }
