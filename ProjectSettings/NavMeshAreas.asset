@@ -108,5 +108,6 @@ NavMeshProjectSettings:
     debug:
       m_Flags: 0
   m_SettingNames:
+  - Enemy
   - Humanoid
   - Enemy
