@@ -1,5 +1,5 @@
-using UnityEngine;
 using TMPro;
+using UnityEngine;
 
 public class PlayerInteractionUI : MonoBehaviour
 {
@@ -7,13 +7,19 @@ public class PlayerInteractionUI : MonoBehaviour
 
     public void MostrarTexto(string texto)
     {
-        interactionText.text = texto;
-        interactionText.enabled = true;
+        if (interactionText != null)
+        {
+            interactionText.text = texto;
+            interactionText.enabled = true;
+        }
     }
 
     public void EsconderTexto()
     {
-        interactionText.text = "";
-        interactionText.enabled = false;
+        if (interactionText != null)
+        {
+            interactionText.text = "";
+            interactionText.enabled = false;
+        }
     }
 }

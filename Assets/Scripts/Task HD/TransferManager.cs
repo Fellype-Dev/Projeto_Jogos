@@ -43,12 +43,11 @@ public class TransferManager : MonoBehaviour
 
         isTransferring = false;
 
-        // Informar que a transferência terminou
         PlayerInteraction player = FindObjectOfType<PlayerInteraction>();
         if (player != null)
         {
             player.transferComplete = true;
-            player.hdComDados = true; // Marcar que o HD agora possui dados
+            player.hdComDados = true;
         }
     }
 }
