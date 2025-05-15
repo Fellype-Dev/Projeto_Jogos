@@ -1,21 +1,19 @@
 using UnityEngine;
 using TMPro;
 
-public class Item_ChipPorta : MonoBehaviour
+public class Item_Cartao : MonoBehaviour
 {
     private TextMeshProUGUI textoColetar;
     private bool podeColetar = false;
 
     void Start()
     {
-        // Busca automaticamente o texto pelo nome (certifique-se de que existe!)
         textoColetar = GameObject.Find("Texto_Coletar").GetComponent<TextMeshProUGUI>();
         textoColetar.gameObject.SetActive(false);
     }
 
     void Update()
     {
-        // Só permite coletar se estiver dentro do trigger
         if (podeColetar && Input.GetKeyDown(KeyCode.E))
         {
             Coletar();
@@ -27,8 +25,7 @@ public class Item_ChipPorta : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             podeColetar = true;
-            if (textoColetar != null)
-                textoColetar.gameObject.SetActive(true); // Mostra o texto
+            textoColetar.gameObject.SetActive(true);
         }
     }
 
@@ -37,16 +34,24 @@ public class Item_ChipPorta : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             podeColetar = false;
-            if (textoColetar != null)
-                textoColetar.gameObject.SetActive(false); // Esconde o texto
+            textoColetar.gameObject.SetActive(false);
         }
     }
 
     void Coletar()
     {
-        if (textoColetar != null)
-            textoColetar.gameObject.SetActive(false); // Esconde ao coletar
-        
-        Destroy(gameObject); // Remove o chip
+        textoColetar.gameObject.SetActive(false);
+
+        GameObject jogador = GameObject.FindGameObjectWithTag("Player");
+        if (jogador != null)
+        {
+            PlayerInventory inventario = jogador.GetComponent<PlayerInventory>();
+            if (inventario != null)
+            {
+                inventario.temCartao = true;
+            }
+        }
+
+        Destroy(gameObject);
     }
 }
