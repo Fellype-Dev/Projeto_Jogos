@@ -9,6 +9,7 @@ TagManager:
   - Servidor
   - Item
   - Box
+  - Camara
   layers:
   - Default
   - TransparentFX
