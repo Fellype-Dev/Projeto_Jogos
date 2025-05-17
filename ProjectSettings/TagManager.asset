@@ -8,6 +8,7 @@ TagManager:
   - Computador
   - Servidor
   - Item
+  - NPC
   layers:
   - Default
   - TransparentFX
