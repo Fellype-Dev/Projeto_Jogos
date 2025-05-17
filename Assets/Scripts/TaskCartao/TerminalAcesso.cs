@@ -1,9 +1,12 @@
 using UnityEngine;
 using TMPro;
+using UnityEngine.AI;
 
 public class TerminalAcesso : MonoBehaviour
 {
-    public Animator animPorta; // Porta com animação
+    public Animator animPorta;
+    public BoxCollider portaCollider;
+    public NavMeshObstacle portaObstacle; // <- Adicione este novo campo
     public TextMeshProUGUI textoInteracao;
     public TextMeshProUGUI textoErro;
 
@@ -14,6 +17,7 @@ public class TerminalAcesso : MonoBehaviour
     {
         textoInteracao.gameObject.SetActive(false);
         textoErro.gameObject.SetActive(false);
+        AtualizarEstadoPorta();
     }
 
     void Update()
@@ -23,15 +27,29 @@ public class TerminalAcesso : MonoBehaviour
             PlayerInventory inventario = jogador.GetComponent<PlayerInventory>();
             if (inventario != null && inventario.temCartao)
             {
-                // Abre a porta usando o parâmetro bool
                 animPorta.SetBool("isOpen", true);
                 textoInteracao.gameObject.SetActive(false);
+                AtualizarEstadoPorta();
             }
             else
             {
                 StartCoroutine(MostrarMensagemErro());
             }
         }
+
+        // Garante que sempre esteja com o estado certo
+        AtualizarEstadoPorta();
+    }
+
+    void AtualizarEstadoPorta()
+    {
+        bool portaAberta = animPorta.GetBool("isOpen");
+
+        if (portaCollider != null)
+            portaCollider.enabled = !portaAberta;
+
+        if (portaObstacle != null)
+            portaObstacle.enabled = !portaAberta;
     }
 
     void OnTriggerEnter(Collider other)
@@ -41,7 +59,6 @@ public class TerminalAcesso : MonoBehaviour
             jogadorPerto = true;
             jogador = other.gameObject;
 
-            // Só mostra o texto se o jogador tiver o cartão
             PlayerInventory inventario = jogador.GetComponent<PlayerInventory>();
             if (inventario != null && inventario.temCartao)
             {
