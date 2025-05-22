@@ -19,6 +19,7 @@ public class PlayerInteraction : MonoBehaviour
 
     // --- Caixas ---
     public bool hasBox = false;
+    public bool hasDepositado = false;
     public GameObject currentBox;
     private GameObject carregadaBox;
     public List<GameObject> boxObjects;
@@ -114,6 +115,7 @@ public class PlayerInteraction : MonoBehaviour
             if (!hasBox && currentBox != null && IsNear(currentBox))
             {
                 hasBox = true;
+                hasDepositado = false;
                 carregadaBox = currentBox;
                 carregadaBox.SetActive(false);
                 carregadaBox.transform.SetParent(inventorySlot);
@@ -126,6 +128,7 @@ public class PlayerInteraction : MonoBehaviour
             else if (hasBox && IsNear(GetNearestDropZone()))
             {
                 hasBox = false;
+                hasDepositado = true;
                 Debug.Log("Caixa depositada.");
                 Destroy(carregadaBox);
                 carregadaBox = null;
@@ -212,9 +215,18 @@ public class PlayerInteraction : MonoBehaviour
         {
             interactionUI.MostrarTexto("[E] Pegar Caixa");
         }
-        else if (hasBox && GetNearestDropZone() != null)
+        else if (hasBox && !hasDepositado && GetNearestDropZone() != null)
         {
             interactionUI.MostrarTexto("[E] Depositar Caixa");
+            
+        }
+        else if (hasDepositado && IsNear(GetNearestDropZone()))
+        {
+            interactionUI.MostrarTexto("Caixa depositada");
+        }
+        else if (currentHD != null && hasHD && !hdInserted)
+        {
+            interactionUI.MostrarTexto("[E] Retirar HD");
         }
         else if (currentHD != null && !hasHD && IsNear(currentHD))
         {
