@@ -21,9 +21,8 @@ public class TerminalAcesso : MonoBehaviour
         if (jogadorPerto && Input.GetKeyDown(KeyCode.E))
         {
             PlayerInventory inventario = jogador.GetComponent<PlayerInventory>();
-            if (inventario != null && inventario.temCartao)
+            if (inventario != null && inventario.temCartao2) // <-- Verifica o cartão correto
             {
-                // Abre a porta usando o parâmetro bool
                 animPorta.SetBool("isOpen", true);
                 textoInteracao.gameObject.SetActive(false);
             }
@@ -41,9 +40,8 @@ public class TerminalAcesso : MonoBehaviour
             jogadorPerto = true;
             jogador = other.gameObject;
 
-            // Só mostra o texto se o jogador tiver o cartão
             PlayerInventory inventario = jogador.GetComponent<PlayerInventory>();
-            if (inventario != null && inventario.temCartao)
+            if (inventario != null && inventario.temCartao2)
             {
                 textoInteracao.gameObject.SetActive(true);
             }
