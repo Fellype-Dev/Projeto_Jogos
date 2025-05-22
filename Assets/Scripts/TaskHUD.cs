@@ -1,57 +1,83 @@
 using TMPro;
 using UnityEngine;
+using System.Collections.Generic;
 
 public class TaskHUD : MonoBehaviour
 {
-    public TextMeshProUGUI taskText;  // Referência ao TextMeshPro no HUD (Canvas)
-    public int totalTasks;
-    public int completedTasks = 0;
+    public TextMeshProUGUI taskText; // Referência ao TextMeshPro no HUD (Canvas)
+
+    private Dictionary<string, int> taskGoals = new Dictionary<string, int>();
+    private Dictionary<string, int> taskProgress = new Dictionary<string, int>();
+
+    private string[] taskNames = new string[]
+    {
+        "TRANSFERÊNCIA DE DADOS",
+        "TRANSPORTE DE CAIXAS",
+        "ANÁLISE DE OPERÁRIOS",
+        "MANUTENÇÃO DE EQUIPAMENTOS"
+    };
 
     void Start()
     {
-        // Inicializa totalTasks com um valor aleatório entre 2 e 5
-        totalTasks = Random.Range(2, 6); // A faixa é [2, 6), ou seja, 2 a 5
+        // Inicializa metas padrão (pode ser sobrescrito depois via SetTotalTasks)
+        taskGoals["TRANSFERÊNCIA DE DADOS"] = Random.Range(2, 5);
+        taskGoals["TRANSPORTE DE CAIXAS"] = Random.Range(2, 5);
+        taskGoals["ANÁLISE DE OPERÁRIOS"] = Random.Range(1, 3);
+        taskGoals["MANUTENÇÃO DE EQUIPAMENTOS"] = Random.Range(1, 4);
+
+        foreach (var task in taskNames)
+        {
+            taskProgress[task] = 0;
+        }
 
         if (taskText != null)
-        {
             UpdateTaskText();
-        }
         else
-        {
             Debug.LogError("taskText is not assigned in the Inspector!");
-        }
     }
 
     void Update()
     {
-        // Atualiza constantemente o texto com as tarefas
         if (taskText != null)
-        {
             UpdateTaskText();
+    }
+
+    void UpdateTaskText()
+    {
+        System.Text.StringBuilder sb = new System.Text.StringBuilder();
+        foreach (var task in taskNames)
+        {
+            sb.AppendLine($"{taskProgress[task]}/{taskGoals[task]} - {task}");
+        }
+        taskText.text = sb.ToString();
+    }
+
+    public void CompleteTask(string taskType)
+    {
+        if (taskProgress.ContainsKey(taskType) && taskProgress[taskType] < taskGoals[taskType])
+        {
+            taskProgress[taskType]++;
+            UpdateTaskText();
+            Debug.Log($"Task '{taskType}' progress: {taskProgress[taskType]}/{taskGoals[taskType]}");
         }
         else
         {
-            Debug.LogError("taskText is null in Update!");
+            Debug.LogWarning($"Task '{taskType}' is already completed or invalid.");
         }
     }
 
-    // Função para atualizar o texto das tarefas
-    void UpdateTaskText()
+    public void SetTotalTasks(string taskType, int total)
     {
-        if (taskText != null)
-        {
-            taskText.text = $"{completedTasks}/{totalTasks} - Transferência de Dados";
-        }
-    }
+        if (taskGoals.ContainsKey(taskType))
+            taskGoals[taskType] = total;
+        else
+            taskGoals.Add(taskType, total);
 
-    // Função que pode ser chamada para completar uma tarefa
-    public void CompleteTask()
-    {
-        if (completedTasks < totalTasks)
-        {
-            completedTasks++;
-            UpdateTaskText();  // Certifique-se de atualizar o texto imediatamente
-            Debug.Log($"Task {completedTasks}/{totalTasks} completed.");
-        }
+        if (!taskProgress.ContainsKey(taskType))
+            taskProgress.Add(taskType, 0);
+        else
+            taskProgress[taskType] = 0;
+
+        UpdateTaskText();
     }
 }

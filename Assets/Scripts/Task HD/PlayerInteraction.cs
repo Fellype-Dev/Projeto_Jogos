@@ -1,57 +1,151 @@
-using TMPro;
 using UnityEngine;
 using System.Collections.Generic;
 
 public class PlayerInteraction : MonoBehaviour
 {
+    [System.Serializable]
+    public class ChamberState
+    {
+        public GameObject chamber;
+        public bool analysisDone = false;
+        public bool isAnalyzing = false;
+        public float analysisTimer = 0f;
+    }
+
+    // --- Análise ---
+    public float analysisDuration = 3f;
+    public List<ChamberState> analiseStates = new List<ChamberState>();
+    private bool isNearChamber = false;
+
+    // --- Caixas ---
+    public bool hasBox = false;
+    public bool hasDepositado = false;
+    public GameObject currentBox;
+    private GameObject carregadaBox;
+    public List<GameObject> boxObjects;
+
+    // --- HDs ---
     public bool hasHD = false;
     public bool hdInserted = false;
     public bool transferComplete = false;
     public bool hdComDados = false;
-
-    public GameObject computer;
-    public GameObject server;
-    public TransferManager transferManager;
-    public PlayerInteractionUI interactionUI;
-    public TaskHUD taskHUD;
-
-    public GameObject droppedHDPrefab; // Prefab do HD que será instanciado ao dropar
-    public Transform inventorySlot; // Posição onde o HD aparece no inventário
-
-    public List<GameObject> ListaComputadores; // Lista de computadores
-    public List<GameObject> ListaServidores;  // Lista de servidores
+    public GameObject currentHD;
+    private GameObject carregadoHD;
     public List<GameObject> hdObjects;
-    private GameObject currentHD;      // HD mais próximo
-    private GameObject carregadoHD;    // HD que o jogador está carregando
 
-    public float interactionDistance = 5f; // Distância de interação (ajustada)
+    // --- Geral ---
+    public Transform inventorySlot;
+    public float interactionDistance = 5f;
+    public List<GameObject> dropZones;
+    public List<GameObject> ListaComputadores;
+    public List<GameObject> ListaServidores;
+    public PlayerInteractionUI interactionUI;
+    public TransferManager transferManager;
+    public TaskHUD taskHUD;
+    public GameObject droppedHDPrefab;
 
     private void Start()
     {
+        boxObjects = new List<GameObject>(GameObject.FindGameObjectsWithTag("Box"));
         hdObjects = new List<GameObject>(GameObject.FindGameObjectsWithTag("HD"));
-        // Inicializando as listas de computadores e servidores
         ListaComputadores = new List<GameObject>(GameObject.FindGameObjectsWithTag("Computador"));
         ListaServidores = new List<GameObject>(GameObject.FindGameObjectsWithTag("Servidor"));
+
+        foreach (GameObject chamber in GameObject.FindGameObjectsWithTag("Camara"))
+        {
+            analiseStates.Add(new ChamberState { chamber = chamber });
+        }
     }
 
     private void Update()
     {
-        // PEGAR OU INTERAGIR COM HD (E)
+        // HD drop
+        if (Input.GetKeyDown(KeyCode.G) && hasHD && carregadoHD != null)
+        {
+            hasHD = false;
+            Vector3 dropPosition = transform.position + transform.forward * 1.5f + Vector3.up * 0.5f;
+            GameObject droppedHD = Instantiate(droppedHDPrefab, dropPosition, Quaternion.identity);
+            droppedHD.tag = "HD";
+            hdObjects.Add(droppedHD);
+
+            Destroy(carregadoHD);
+            carregadoHD = null;
+            Debug.Log("HD dropado.");
+        }
+
+        // Transferência
+        if (Input.GetKeyDown(KeyCode.Q) && hdInserted && !transferComplete)
+        {
+            transferManager.StartTransfer();
+        }
+
+        // Identifica objetos próximos
+        currentBox = GetNearestBox();
+        currentHD = GetNearestHD();
+        ChamberState currentChamber = GetNearestChamberState();
+
+        if (currentChamber != null)
+        {
+            float distance = Vector3.Distance(transform.position, currentChamber.chamber.transform.position);
+            isNearChamber = distance <= interactionDistance;
+
+            if (isNearChamber && Input.GetKeyDown(KeyCode.E))
+            {
+                if (!currentChamber.isAnalyzing && !currentChamber.analysisDone)
+                {
+                    currentChamber.isAnalyzing = true;
+                    currentChamber.analysisTimer = 0f;
+                }
+                else if (currentChamber.isAnalyzing && currentChamber.analysisTimer >= analysisDuration)
+                {
+                    currentChamber.isAnalyzing = false;
+                    currentChamber.analysisDone = true;
+                    Debug.Log("Análise concluída para esta câmara.");
+                    taskHUD.CompleteTask("ANÁLISE DE OPERÁRIOS");
+                }
+            }
+
+            if (currentChamber.isAnalyzing)
+            {
+                currentChamber.analysisTimer += Time.deltaTime;
+            }
+        }
+
+        // Interações com E
         if (Input.GetKeyDown(KeyCode.E))
         {
-            if (!hasHD && currentHD != null && IsNear(currentHD))
+            if (!hasBox && currentBox != null && IsNear(currentBox))
+            {
+                hasBox = true;
+                hasDepositado = false;
+                carregadaBox = currentBox;
+                carregadaBox.SetActive(false);
+                carregadaBox.transform.SetParent(inventorySlot);
+                carregadaBox.transform.localPosition = Vector3.zero;
+                carregadaBox.transform.localRotation = Quaternion.identity;
+                boxObjects.Remove(carregadaBox);
+                currentBox = null;
+                Debug.Log("Caixa coletada.");
+            }
+            else if (hasBox && IsNear(GetNearestDropZone()))
+            {
+                hasBox = false;
+                hasDepositado = true;
+                Debug.Log("Caixa depositada.");
+                taskHUD.CompleteTask("TRANSPORTE DE CAIXAS");
+                Destroy(carregadaBox);
+                carregadaBox = null;
+            }
+            else if (!hasHD && currentHD != null && IsNear(currentHD))
             {
                 hasHD = true;
                 carregadoHD = currentHD;
-
                 carregadoHD.SetActive(false);
                 carregadoHD.transform.SetParent(inventorySlot);
                 carregadoHD.transform.localPosition = Vector3.zero;
                 carregadoHD.transform.localRotation = Quaternion.identity;
-
                 hdObjects.Remove(carregadoHD);
                 currentHD = null;
-
                 Debug.Log("HD coletado.");
             }
             else if (hasHD && IsNearComputador() && !hdInserted && !hdComDados)
@@ -59,8 +153,15 @@ public class PlayerInteraction : MonoBehaviour
                 hdInserted = true;
                 hasHD = false;
 
-                carregadoHD.SetActive(false);
-                Debug.Log("HD inserido no computador.");
+                if (carregadoHD != null)
+                {
+                    carregadoHD.SetActive(false);
+                    Debug.Log("HD inserido no computador.");
+                }
+                else
+                {
+                    Debug.LogWarning("carregadoHD é nulo ao tentar inserir no computador.");
+                }
             }
             else if (hdInserted && transferComplete && IsNearComputador())
             {
@@ -69,12 +170,19 @@ public class PlayerInteraction : MonoBehaviour
                 transferComplete = false;
                 hdComDados = true;
 
-                carregadoHD.SetActive(true);
-                carregadoHD.transform.SetParent(inventorySlot);
-                carregadoHD.transform.localPosition = Vector3.zero;
-                carregadoHD.transform.localRotation = Quaternion.identity;
-
-                Debug.Log("HD retirado com dados.");
+                if (carregadoHD != null)
+                {
+                    carregadoHD.SetActive(true);
+                    carregadoHD.transform.SetParent(inventorySlot);
+                    carregadoHD.transform.localPosition = Vector3.zero;
+                    carregadoHD.transform.localRotation = Quaternion.identity;
+                    Debug.Log("HD retirado com dados.");
+                }
+                else
+                {
+                    Debug.LogError("carregadoHD está nulo ao tentar retirar HD do computador.");
+                    // Se quiser, aqui pode instanciar um novo objeto HD ou lidar com o erro
+                }
             }
             else if (hasHD && IsNearServidor() && hdComDados)
             {
@@ -82,48 +190,71 @@ public class PlayerInteraction : MonoBehaviour
                 hdComDados = false;
 
                 if (taskHUD != null)
-                    taskHUD.CompleteTask();
+                    taskHUD.CompleteTask("TRANSFERÊNCIA DE DADOS");
                 else
-                    Debug.LogError("taskHUD não foi configurado corretamente!");
+                    Debug.LogError("taskHUD não foi configurado!");
 
-                Debug.Log("Tarefa concluída com sucesso!");
+                Debug.Log("HD inserido no servidor. Tarefa concluída.");
 
                 if (carregadoHD != null)
                 {
                     Destroy(carregadoHD);
                     carregadoHD = null;
                 }
+                else
+                {
+                    Debug.LogWarning("carregadoHD já está nulo ao tentar destruir.");
+                }
             }
-        }
-
-        // DROPAR (G)
-        if (Input.GetKeyDown(KeyCode.G) && hasHD && carregadoHD != null)
-        {
-            hasHD = false;
-
-            Vector3 dropPosition = transform.position + transform.forward * 1.5f + Vector3.up * 0.5f;
-            GameObject droppedHD = Instantiate(droppedHDPrefab, dropPosition, Quaternion.identity);
-            droppedHD.tag = "HD";
-
-            hdObjects.Add(droppedHD);
-            Destroy(carregadoHD);
-            carregadoHD = null;
-
-            Debug.Log("HD dropado.");
-        }
-
-        // TRANSFERÊNCIA (Q)
-        if (Input.GetKeyDown(KeyCode.Q) && hdInserted && !transferComplete)
-        {
-            transferManager.StartTransfer();
         }
     }
 
     private void LateUpdate()
     {
-        currentHD = GetNearestHD();
+        ChamberState chamber = GetNearestChamberState();
+        if (chamber != null)
+        {
+            float dist = Vector3.Distance(transform.position, chamber.chamber.transform.position);
+            if (dist <= interactionDistance)
+            {
+                if (!chamber.isAnalyzing && !chamber.analysisDone)
+                {
+                    interactionUI.MostrarTexto("[E] Iniciar análise");
+                }
+                else if (chamber.isAnalyzing && chamber.analysisTimer < analysisDuration)
+                {
+                    interactionUI.MostrarTexto("Analisando... (" + (analysisDuration - chamber.analysisTimer).ToString("F1") + "s)");
+                }
+                else if (chamber.isAnalyzing && chamber.analysisTimer >= analysisDuration)
+                {
+                    interactionUI.MostrarTexto("[E] Finalizar análise");
+                }
+                else if (chamber.analysisDone)
+                {
+                    interactionUI.MostrarTexto("Análise feita");
+                }
+                return;
+            }
+        }
 
-        if (currentHD != null && !hasHD && IsNear(currentHD))
+        // Outros textos de interação
+        if (currentBox != null && !hasBox && IsNear(currentBox))
+        {
+            interactionUI.MostrarTexto("[E] Pegar Caixa");
+        }
+        else if (hasBox && !hasDepositado && GetNearestDropZone() != null)
+        {
+            interactionUI.MostrarTexto("[E] Depositar Caixa");
+        }
+        else if (hasDepositado && IsNear(GetNearestDropZone()))
+        {
+            interactionUI.MostrarTexto("Caixa depositada");
+        }
+        else if (currentHD != null && hasHD && !hdInserted)
+        {
+            interactionUI.MostrarTexto("[E] Retirar HD");
+        }
+        else if (currentHD != null && !hasHD && IsNear(currentHD))
         {
             interactionUI.MostrarTexto("[E] Pegar HD");
         }
@@ -149,55 +280,65 @@ public class PlayerInteraction : MonoBehaviour
         }
     }
 
-    private bool IsNear(GameObject target)
-    {
-        return Vector3.Distance(transform.position, target.transform.position) < interactionDistance;
-    }
+    // Métodos auxiliares
+    private GameObject GetNearestBox() => GetNearestObject(boxObjects);
+    private GameObject GetNearestHD() => GetNearestObject(hdObjects);
+    private GameObject GetNearestDropZone() => GetNearestObject(dropZones);
 
-    // Função para verificar se o jogador está perto de um computador
-    private bool IsNearComputador()
+    private GameObject GetNearestObject(List<GameObject> list)
     {
-        foreach (GameObject computador in ListaComputadores)
+        GameObject nearest = null;
+        float dist = Mathf.Infinity;
+        foreach (GameObject obj in list)
         {
-            if (computador != null && Vector3.Distance(transform.position, computador.transform.position) < interactionDistance)
+            if (obj != null)
             {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    // Função para verificar se o jogador está perto de um servidor
-    private bool IsNearServidor()
-    {
-        foreach (GameObject servidor in ListaServidores)
-        {
-            if (servidor != null && Vector3.Distance(transform.position, servidor.transform.position) < interactionDistance)
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private GameObject GetNearestHD()
-    {
-        GameObject nearestHD = null;
-        float nearestDistance = Mathf.Infinity;
-
-        foreach (GameObject hd in hdObjects)
-        {
-            if (hd != null)
-            {
-                float distance = Vector3.Distance(transform.position, hd.transform.position);
-                if (distance < nearestDistance)
+                float d = Vector3.Distance(transform.position, obj.transform.position);
+                if (d < dist && d <= interactionDistance)
                 {
-                    nearestHD = hd;
-                    nearestDistance = distance;
+                    nearest = obj;
+                    dist = d;
                 }
             }
         }
+        return nearest;
+    }
 
-        return nearestHD;
+    private ChamberState GetNearestChamberState()
+    {
+        ChamberState nearest = null;
+        float dist = Mathf.Infinity;
+        foreach (ChamberState state in analiseStates)
+        {
+            if (state.chamber != null)
+            {
+                float d = Vector3.Distance(transform.position, state.chamber.transform.position);
+                if (d < dist && d <= interactionDistance)
+                {
+                    nearest = state;
+                    dist = d;
+                }
+            }
+        }
+        return nearest;
+    }
+
+    private bool IsNear(GameObject target)
+    {
+        if (target == null) return false;
+        return Vector3.Distance(transform.position, target.transform.position) < interactionDistance;
+    }
+
+    private bool IsNearComputador() => IsNearAny(ListaComputadores);
+    private bool IsNearServidor() => IsNearAny(ListaServidores);
+
+    private bool IsNearAny(List<GameObject> list)
+    {
+        foreach (GameObject obj in list)
+        {
+            if (obj != null && IsNear(obj))
+                return true;
+        }
+        return false;
     }
 }

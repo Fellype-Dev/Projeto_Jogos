@@ -6,7 +6,7 @@ public class TerminalAcesso : MonoBehaviour
 {
     public Animator animPorta;
     public BoxCollider portaCollider;
-    public NavMeshObstacle portaObstacle; // <- Adicione este novo campo
+    public NavMeshObstacle portaObstacle;
     public TextMeshProUGUI textoInteracao;
     public TextMeshProUGUI textoErro;
 
@@ -25,7 +25,7 @@ public class TerminalAcesso : MonoBehaviour
         if (jogadorPerto && Input.GetKeyDown(KeyCode.E))
         {
             PlayerInventory inventario = jogador.GetComponent<PlayerInventory>();
-            if (inventario != null && inventario.temCartao)
+            if (inventario != null && inventario.temCartao2)
             {
                 animPorta.SetBool("isOpen", true);
                 textoInteracao.gameObject.SetActive(false);
@@ -37,7 +37,6 @@ public class TerminalAcesso : MonoBehaviour
             }
         }
 
-        // Garante que sempre esteja com o estado certo
         AtualizarEstadoPorta();
     }
 
@@ -60,7 +59,7 @@ public class TerminalAcesso : MonoBehaviour
             jogador = other.gameObject;
 
             PlayerInventory inventario = jogador.GetComponent<PlayerInventory>();
-            if (inventario != null && inventario.temCartao)
+            if (inventario != null && inventario.temCartao2)
             {
                 textoInteracao.gameObject.SetActive(true);
             }
