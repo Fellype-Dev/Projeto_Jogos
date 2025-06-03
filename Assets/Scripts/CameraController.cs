@@ -2,11 +2,11 @@ using UnityEngine;
 
 public class CameraController : MonoBehaviour
 {
-    public float mouseSensitivity = 400.0f;
+    private float mouseSensitivity;
     public float verticalClamp = 80.0f;
     public float cameraHeight = 2.5f;
     public float smoothFollow = 5f; // Suavização do movimento
-    
+
     private Transform playerBody;
     private CharacterController playerCC;
     private float xRotation = 0f;
@@ -17,13 +17,18 @@ public class CameraController : MonoBehaviour
         Cursor.lockState = CursorLockMode.Locked;
         playerBody = GameObject.FindGameObjectWithTag("Player").transform;
         playerCC = playerBody.GetComponent<CharacterController>();
-        
+
+        mouseSensitivity = SettingsManager.Instance.mouseSensitivity;
+
+
         transform.localPosition = new Vector3(0, cameraHeight, 0);
         transform.localRotation = Quaternion.identity;
     }
 
     void Update()
     {
+
+        mouseSensitivity = SettingsManager.Instance.mouseSensitivity;
         HandleCameraRotation();
     }
 

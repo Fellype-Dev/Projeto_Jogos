@@ -22,8 +22,8 @@ public class TaskHUD : MonoBehaviour
         // Inicializa metas padrão (pode ser sobrescrito depois via SetTotalTasks)
         taskGoals["TRANSFERÊNCIA DE DADOS"] = Random.Range(2, 5);
         taskGoals["TRANSPORTE DE CAIXAS"] = Random.Range(2, 5);
-        taskGoals["ANÁLISE DE OPERÁRIOS"] = Random.Range(1, 3);
-        taskGoals["MANUTENÇÃO DE EQUIPAMENTOS"] = Random.Range(1, 4);
+        taskGoals["ANÁLISE DE OPERÁRIOS"] = Random.Range(1, 2);
+        taskGoals["MANUTENÇÃO DE EQUIPAMENTOS"] = Random.Range(1, 3);
 
         foreach (var task in taskNames)
         {
