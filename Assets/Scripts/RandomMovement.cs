@@ -17,7 +17,11 @@ public class RandomMovement : MonoBehaviour
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
-        agent.avoidancePriority = Random.Range(30, 70); // valores entre 0 e 99
+
+        // Ajustes de evitação de obstáculos
+        agent.avoidancePriority = Random.Range(30, 70);
+        agent.obstacleAvoidanceType = ObstacleAvoidanceType.HighQualityObstacleAvoidance;
+
         lastPosition = transform.position;
     }
 
@@ -25,14 +29,14 @@ public class RandomMovement : MonoBehaviour
     {
         checkTimer += Time.deltaTime;
 
-        // Verifica se está parado mesmo com destino definido
+        // Verifica se está parado, indicando possível travamento
         if (checkTimer >= stuckCheckDelay)
         {
             float movedDistance = Vector3.Distance(transform.position, lastPosition);
 
             if (movedDistance < stuckThreshold)
             {
-                // Provavelmente preso, tenta novo destino
+                // Provavelmente está preso, tenta novo destino
                 SetNewDestination();
             }
 
@@ -40,7 +44,7 @@ public class RandomMovement : MonoBehaviour
             checkTimer = 0f;
         }
 
-        // Se chegou ao destino, define novo ponto
+        // Se chegou ao destino, define um novo ponto
         if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance)
         {
             SetNewDestination();
@@ -58,14 +62,24 @@ public class RandomMovement : MonoBehaviour
 
     bool RandomPoint(Vector3 center, float range, out Vector3 result)
     {
-        for (int i = 0; i < 1; i++) // tenta até 30 vezes
+        for (int i = 0; i < 30; i++) // tenta até 30 vezes
         {
             Vector3 randomPoint = center + Random.insideUnitSphere * range;
+            randomPoint.y = center.y; // mantém no mesmo nível do chão
+
             NavMeshHit hit;
-            if (NavMesh.SamplePosition(randomPoint, out hit, 1.5f, NavMesh.AllAreas))
+            if (NavMesh.SamplePosition(randomPoint, out hit, 3f, NavMesh.AllAreas))
             {
-                result = hit.position;
-                return true;
+                if (Vector3.Distance(hit.position, transform.position) > 1.5f)
+                {
+                    // Verifica se o caminho é navegável
+                    NavMeshPath path = new NavMeshPath();
+                    if (agent.CalculatePath(hit.position, path) && path.status == NavMeshPathStatus.PathComplete)
+                    {
+                        result = hit.position;
+                        return true;
+                    }
+                }
             }
         }
 
