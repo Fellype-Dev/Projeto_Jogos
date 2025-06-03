@@ -80,6 +80,7 @@ public class RandomMovement : MonoBehaviour
                         return true;
                     }
                 }
+                
             }
         }
 

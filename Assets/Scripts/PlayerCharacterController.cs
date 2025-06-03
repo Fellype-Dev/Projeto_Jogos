@@ -185,4 +185,6 @@ public class PlayerCharacterController : MonoBehaviour
         Gizmos.color = Color.cyan;
         Gizmos.DrawWireSphere(transform.position, 2f);
     }
+
+    
 }
