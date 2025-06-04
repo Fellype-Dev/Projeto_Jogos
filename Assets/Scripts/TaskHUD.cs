@@ -6,9 +6,9 @@ public class TaskHUD : MonoBehaviour
 {
     public TextMeshProUGUI taskText; // Referência ao TextMeshPro no HUD (Canvas)
 
+    // Campos privados para proteção
     private Dictionary<string, int> taskGoals = new Dictionary<string, int>();
     private Dictionary<string, int> taskProgress = new Dictionary<string, int>();
-
     private string[] taskNames = new string[]
     {
         "TRANSFERÊNCIA DE DADOS",
@@ -17,12 +17,17 @@ public class TaskHUD : MonoBehaviour
         "MANUTENÇÃO DE EQUIPAMENTOS"
     };
 
+    // Propriedades públicas somente leitura
+    public Dictionary<string, int> TaskGoals => taskGoals;
+    public Dictionary<string, int> TaskProgress => taskProgress;
+    public string[] TaskNames => taskNames;
+
     void Start()
     {
         // Inicializa metas padrão (pode ser sobrescrito depois via SetTotalTasks)
         taskGoals["TRANSFERÊNCIA DE DADOS"] = Random.Range(2, 5);
         taskGoals["TRANSPORTE DE CAIXAS"] = Random.Range(2, 5);
-        taskGoals["ANÁLISE DE OPERÁRIOS"] = Random.Range(1, 2);
+        taskGoals["ANÁLISE DE OPERÁRIOS"] = Random.Range(1, 3);
         taskGoals["MANUTENÇÃO DE EQUIPAMENTOS"] = Random.Range(1, 3);
 
         foreach (var task in taskNames)
