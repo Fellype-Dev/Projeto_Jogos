@@ -8,6 +8,7 @@ public class CutsceneManager : MonoBehaviour
     public VideoPlayer videoPlayer;
     public VideoClip victoryClip;
     public VideoClip defeatClip;
+    
 
     void Start()
     {
