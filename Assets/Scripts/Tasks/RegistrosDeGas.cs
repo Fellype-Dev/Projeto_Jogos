@@ -3,10 +3,11 @@ using TMPro;
 
 public class RegistroDeGas : MonoBehaviour
 {
-    public int idRegistro = 1; // Defina 1, 2, 3, 4 no Inspector
+    public int idRegistro = 1;
     public TextMeshProUGUI textoInteracao;
     public string mensagemFechar = "Pressione [E] para fechar o registro";
     public float distanciaInteracao = 3f;
+    public GameObject particulaGas; // <- Referência da partícula
 
     private bool jogadorPerto = false;
     private bool registroFechado = false;
@@ -75,6 +76,9 @@ public class RegistroDeGas : MonoBehaviour
 
         if (somGas != null)
             somGas.Stop();
+
+        if (particulaGas != null)
+            particulaGas.SetActive(false); // <- Desativa a partícula
 
         if (textoInteracao != null)
             textoInteracao.text = "Registro fechado!";
