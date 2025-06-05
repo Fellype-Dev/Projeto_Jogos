@@ -9,6 +9,9 @@ public class CutsceneManager : MonoBehaviour
     public VideoClip victoryClip;
     public VideoClip defeatClip;
 
+    [Header("Canvas a desativar durante a cutscene")]
+    public GameObject[] canvasesToDisable;
+
     void Start()
     {
         cutscenePanel.SetActive(false);
@@ -26,26 +29,38 @@ public class CutsceneManager : MonoBehaviour
 
     void PlayCutscene(VideoClip clip)
     {
+        // Ativa painel da cutscene
         cutscenePanel.SetActive(true);
+
+        // Desativa os canvas do HUD
+        foreach (GameObject canvas in canvasesToDisable)
+        {
+            if (canvas != null)
+                canvas.SetActive(false);
+        }
+
+        // Inicia vídeo
         videoPlayer.clip = clip;
-        videoPlayer.loopPointReached += OnCutsceneFinished; // Evento chamado no fim do vídeo
+        videoPlayer.loopPointReached += OnCutsceneFinished;
         videoPlayer.Play();
 
+        // Pausa o tempo do jogo e o áudio geral
         AudioListener.volume = 0f;
-        Time.timeScale = 0f; // Pausa o jogo, mas o vídeo segue
+        Time.timeScale = 0f;
     }
 
-void OnCutsceneFinished(VideoPlayer vp)
-{
-    Time.timeScale = 1f;
-    AudioListener.volume = 1f;
+    void OnCutsceneFinished(VideoPlayer vp)
+    {
+        Time.timeScale = 1f;
+        AudioListener.volume = 1f;
 
-    Cursor.lockState = CursorLockMode.None; // Libera o mouse
-    Cursor.visible = true;                 // Torna o cursor visível
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
 
-    SceneManager.LoadScene("MainMenu");
-}
-    public void HideCutscenePanel() // opcional: se quiser permitir pular com botão
+        SceneManager.LoadScene("MainMenu");
+    }
+
+    public void HideCutscenePanel()
     {
         cutscenePanel.SetActive(false);
         Time.timeScale = 1f;

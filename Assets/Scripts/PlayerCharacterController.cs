@@ -28,6 +28,7 @@ public class PlayerCharacterController : MonoBehaviour
     public CharacterController cc;
     public Animator animator;
     public Transform cameraTransform;
+    public CutsceneManager cutsceneManager; // NOVO
 
     [Header("HUD")]
     public Image barraVida;
@@ -36,6 +37,8 @@ public class PlayerCharacterController : MonoBehaviour
     [Header("Inventário")]
     public string[] inventario = new string[2];  // Capacidade de 2 itens
     private int inventarioIndex = 0;
+
+    private bool morreu = false; // NOVO
 
     void Start()
     {
@@ -49,12 +52,20 @@ public class PlayerCharacterController : MonoBehaviour
 
     void Update()
     {
+        if (morreu) return; // Bloqueia ações se já morreu
+
         HandleMovement();
         HandleJump();
         HandleCameraRotation();
         UpdateAnimations();
         AtualizarHUD();
         HandleInventoryInteraction();
+
+        // Checa se morreu
+        if (vidaAtual <= 0f && !morreu)
+        {
+            Morreu(); // NOVO
+        }
     }
 
     void HandleMovement()
@@ -82,7 +93,6 @@ public class PlayerCharacterController : MonoBehaviour
             }
             else
             {
-                // Perder vida ao tentar correr sem estamina
                 vidaAtual -= 10f * Time.deltaTime;
                 vidaAtual = Mathf.Max(vidaAtual, 0f);
             }
@@ -146,9 +156,8 @@ public class PlayerCharacterController : MonoBehaviour
 
     void HandleInventoryInteraction()
     {
-        if (Input.GetKeyDown(KeyCode.I))  // Pressione 'I' para interagir com o inventário
+        if (Input.GetKeyDown(KeyCode.I))
         {
-            // Tenta pegar um novo item (apenas para exemplo, você pode usar colisões, pickups, etc)
             if (inventarioIndex < inventario.Length)
             {
                 string novoItem = "Item " + (inventarioIndex + 1);
@@ -162,14 +171,13 @@ public class PlayerCharacterController : MonoBehaviour
             }
         }
 
-        if (Input.GetKeyDown(KeyCode.U))  // Pressione 'U' para usar um item (por exemplo)
+        if (Input.GetKeyDown(KeyCode.U))
         {
             if (inventarioIndex > 0)
             {
                 string itemUsado = inventario[0];
                 Debug.Log("Usando item: " + itemUsado);
 
-                // Remover item do inventário
                 for (int i = 0; i < inventario.Length - 1; i++)
                 {
                     inventario[i] = inventario[i + 1];
@@ -180,11 +188,23 @@ public class PlayerCharacterController : MonoBehaviour
         }
     }
 
+    public void ReceberDano(float dano) // NOVO
+    {
+        vidaAtual -= dano;
+        vidaAtual = Mathf.Max(vidaAtual, 0f);
+    }
+
+    void Morreu() // NOVO
+    {
+        morreu = true;
+        Debug.Log("Jogador morreu");
+        if (cutsceneManager != null)
+            cutsceneManager.PlayDefeatCutscene();
+    }
+
     void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.cyan;
         Gizmos.DrawWireSphere(transform.position, 2f);
     }
-
-    
 }
